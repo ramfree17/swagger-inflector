@@ -17,7 +17,9 @@
 package io.swagger.inflector.controllers;
 
 import com.fasterxml.jackson.databind.JavaType;
+import com.google.common.collect.Lists;
 import io.swagger.inflector.config.Configuration;
+import io.swagger.inflector.config.HandlerInvocationFilter;
 import io.swagger.inflector.converters.ConversionException;
 import io.swagger.inflector.converters.InputConverter;
 import io.swagger.inflector.examples.ExampleBuilder;
@@ -47,22 +49,27 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class SwaggerOperationController extends ReflectionUtils implements Inflector<ContainerRequestContext, Response> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SwaggerOperationController.class);
-    
+
     private static Set<String> commonHeaders = new HashSet<String>();
 
     static {
-      commonHeaders.add("Host");
-      commonHeaders.add("User-Agent");
-      commonHeaders.add("Accept");
-      commonHeaders.add("Content-Type");
-      commonHeaders.add("Content-Length");
+        commonHeaders.add("Host");
+        commonHeaders.add("User-Agent");
+        commonHeaders.add("Accept");
+        commonHeaders.add("Content-Type");
+        commonHeaders.add("Content-Length");
     }
-    
+
     private String path;
     private String httpMethod;
     private Operation operation;
@@ -74,6 +81,7 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
     private String controllerName;
     private String methodName;
     private String operationSignature;
+    private List<HandlerInvocationFilter> filters = Lists.newArrayList();
 
     public SwaggerOperationController(Configuration config, String path, String httpMethod, Operation operation, Map<String, Model> definitions) {
         this.setConfiguration(config);
@@ -103,12 +111,11 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
                 builder.append(RequestContext.class.getCanonicalName()).append(" request");
             } else {
                 builder.append(", ");
-                if(args[i] == null) {
+                if (args[i] == null) {
                     LOGGER.error("didn't expect a null class for " + operation.getParameters().get(i - 1).getName());
-                }
-                else if(args[i].getRawClass() != null) {
+                } else if (args[i].getRawClass() != null) {
                     String className = args[i].getRawClass().getName();
-                    if(className.startsWith("java.lang.")) {
+                    if (className.startsWith("java.lang.")) {
                         className = className.substring("java.lang.".length());
                     }
                     builder.append(className);
@@ -146,8 +153,16 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
                             }
                             if (matched) {
                                 this.parameterClasses = args;
-                                this.controller = config.getControllerFactory().instantiateController(cls);
+
+                                if (config.getControllerFactory() != null) {
+                                    this.controller = config.getControllerFactory().instantiateController(cls);
+                                } else {
+                                    this.controller = config.getObjectFactory().instantiateController(cls);
+                                }
+
                                 LOGGER.debug("found class `" + controllerName + "`");
+
+                                createHandlerInvocationFilters(operation, method);
                                 return method;
                             }
                         }
@@ -164,10 +179,20 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
         return null;
     }
 
+    private void createHandlerInvocationFilters(Operation operation, Method method) {
+        for (String filter : config.getHandlerInvocationFilters()) {
+            try {
+                filters.add(config.getObjectFactory().instantiateFilter(filter));
+            } catch (Exception e) {
+                LOGGER.error("Failed to instantiate handlerInvocationFilter", e);
+            }
+        }
+    }
+
     @Override
     public Response apply(ContainerRequestContext ctx) {
         List<Parameter> parameters = operation.getParameters();
-        RequestContext requestContext = new RequestContext(ctx);
+        RequestContext requestContext = new RequestContext(ctx, operation);
 
         Object[] args = new Object[parameters.size() + 1];
         if (parameters != null) {
@@ -181,34 +206,34 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
             String[] parts = null;
             Set<String> existingKeys = new HashSet<String>();
 
-            for(Iterator<String> x = uri.getQueryParameters().keySet().iterator(); x.hasNext(); ) {
-              existingKeys.add(x.next() + ": qp");
+            for (Iterator<String> x = uri.getQueryParameters().keySet().iterator(); x.hasNext(); ) {
+                existingKeys.add(x.next() + ": qp");
             }
-            for(Iterator<String> x = uri.getPathParameters().keySet().iterator(); x.hasNext(); ) {
-              existingKeys.add(x.next() + ": pp");
+            for (Iterator<String> x = uri.getPathParameters().keySet().iterator(); x.hasNext(); ) {
+                existingKeys.add(x.next() + ": pp");
             }
-            for(Iterator<String> x = ctx.getHeaders().keySet().iterator(); x.hasNext(); ) {
-              String key = x.next();
+            for (Iterator<String> x = ctx.getHeaders().keySet().iterator(); x.hasNext(); ) {
+                String key = x.next();
 //              if(!commonHeaders.contains(key))
 //                existingKeys.add(key);
             }
-            for(Parameter p : parameters) {
-              if(p instanceof FormParameter) {
-                if (formDataString == null) {
-                  // can only read stream once
-                  try {
-                    formDataString = IOUtils.toString(ctx.getEntityStream(), "UTF-8");
-                    parts = formDataString.split("&");
-  
-                    for (String part : parts) {
-                        String[] kv = part.split("=");
-                        existingKeys.add(kv[0] + ": fp");
+            for (Parameter p : parameters) {
+                if (p instanceof FormParameter) {
+                    if (formDataString == null) {
+                        // can only read stream once
+                        try {
+                            formDataString = IOUtils.toString(ctx.getEntityStream(), "UTF-8");
+                            parts = formDataString.split("&");
+
+                            for (String part : parts) {
+                                String[] kv = part.split("=");
+                                existingKeys.add(kv[0] + ": fp");
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
-                  } catch (IOException e) {
-                    e.printStackTrace();
-                  }
                 }
-              }
             }
 /*
             // TODO handling for multipart
@@ -236,52 +261,48 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
                             if (formDataString != null) {
                                 for (String part : parts) {
                                     String[] kv = part.split("=");
-                                    if(kv != null) {
-                                      if(kv.length > 0) {
-                                        existingKeys.remove(kv[0] + ": fp");
-                                      }
-                                      if (kv.length == 2) {
-                                          // TODO how to handle arrays here?
-                                          String key = kv[0];
-                                          String value = kv[1];
-                                          if (parameter.getName().equals(key)) {
-                                              JavaType jt = parameterClasses[i];
-                                              Class<?> cls = jt.getRawClass();
-                                              try {
-                                                  o = validator.convertAndValidate(Arrays.asList(value), parameter, cls, definitions);
-                                              }
-                                              catch (ConversionException e) {
-                                                  missingParams.add(e.getError());
-                                              }
-                                              catch (ValidationException e) {
-                                                  missingParams.add(e.getValidationMessage());
-                                              }
-                                          }
-                                      }
-                                   }
+                                    if (kv != null) {
+                                        if (kv.length > 0) {
+                                            existingKeys.remove(kv[0] + ": fp");
+                                        }
+                                        if (kv.length == 2) {
+                                            // TODO how to handle arrays here?
+                                            String key = kv[0];
+                                            String value = kv[1];
+                                            if (parameter.getName().equals(key)) {
+                                                JavaType jt = parameterClasses[i];
+                                                Class<?> cls = jt.getRawClass();
+                                                try {
+                                                    o = validator.convertAndValidate(Arrays.asList(value), parameter, cls, definitions);
+                                                } catch (ConversionException e) {
+                                                    missingParams.add(e.getError());
+                                                } catch (ValidationException e) {
+                                                    missingParams.add(e.getValidationMessage());
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                    else {
+                    } else {
                         try {
                             String paramName = parameter.getName();
-                            if("query".equals(in)) {
-                              existingKeys.remove(paramName + ": qp");
+                            if ("query".equals(in)) {
+                                existingKeys.remove(paramName + ": qp");
                             }
-                            if("path".equals(in)) {
-                              existingKeys.remove(paramName + ": pp");
+                            if ("path".equals(in)) {
+                                existingKeys.remove(paramName + ": pp");
                             }
                             JavaType jt = parameterClasses[i];
                             Class<?> cls = jt.getRawClass();
                             if ("body".equals(in)) {
                                 if (ctx.hasEntity()) {
                                     o = EntityProcessorFactory.readValue(ctx.getMediaType(), ctx.getEntityStream(), cls);
-                                }
-                                else if(parameter.getRequired()) {
+                                } else if (parameter.getRequired()) {
                                     ValidationException e = new ValidationException();
                                     e.message(new ValidationMessage()
-                                        .message("The input body `" + paramName + "` is required"));
+                                            .message("The input body `" + paramName + "` is required"));
                                     throw e;
                                 }
                             }
@@ -292,11 +313,9 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
                             } else if ("header".equals(in)) {
                                 o = validator.convertAndValidate(ctx.getHeaders().get(parameter.getName()), parameter, cls, definitions);
                             }
-                        }
-                        catch (ConversionException e) {
+                        } catch (ConversionException e) {
                             missingParams.add(e.getError());
-                        }
-                        catch (ValidationException e) {
+                        } catch (ValidationException e) {
                             missingParams.add(e.getValidationMessage());
                         }
                     }
@@ -307,7 +326,7 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
                 args[i] = o;
                 i += 1;
             }
-            if(existingKeys.size() > 0) {
+            if (existingKeys.size() > 0) {
                 LOGGER.debug("unexpected keys: " + existingKeys);
             }
             if (missingParams.size() > 0) {
@@ -322,113 +341,139 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
                     if (count > 0) {
                         builder.append(", ");
                     }
-                    if(message != null && message.getMessage() != null) {
+                    if (message != null && message.getMessage() != null) {
                         builder.append(message.getMessage());
-                    }
-                    else {
+                    } else {
                         builder.append("no additional input");
                     }
                     count += 1;
                 }
                 int statusCode = config.getInvalidRequestStatusCode();
                 ApiError error = new ApiError()
-                  .code(statusCode)
-                  .message(builder.toString());
+                        .code(statusCode)
+                        .message(builder.toString());
                 throw new ApiException(error);
             }
         }
-        if(method != null) {
-          LOGGER.info("calling method " + method + " on controller " + this.controller + " with args " + Arrays.toString(args));
-          try {
-              Object response = method.invoke(controller, args);
-              if (response instanceof ResponseContext) {
-                  ResponseContext wrapper = (ResponseContext) response;
-                  ResponseBuilder builder = Response.status(wrapper.getStatus());
-  
-                  // response headers
-                  for (String key : wrapper.getHeaders().keySet()) {
-                      builder.header(key, wrapper.getHeaders().get(key));
-                  }
-  
-                  // content type
-                  if (wrapper.getContentType() != null) {
-                      builder.type(wrapper.getContentType());
-                  }
-  
-                  // entity
-                  if (wrapper.getEntity() != null) {
-                      builder.entity(wrapper.getEntity());
-                  }
-                  return builder.build();
-              }
-              return Response.ok().entity(response).build();
-          } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
-              LOGGER.error("failed to invoke method " + method, e);
-              for (Throwable cause = e.getCause(); cause != null;) {
-                  if (cause instanceof ApiException) {
-                      throw (ApiException) cause;
-                  }
-                  final Throwable next = cause.getCause();
-                  cause = next == cause || next == null ? null : next;
-              }
-              ApiError error = new ApiError()
-                    .message("failed to invoke controller")
-                    .code(500);
-              throw new ApiException(error, e);
-          }
+        if (method != null) {
+            LOGGER.info("calling method " + method + " on controller " + this.controller + " with args " + Arrays.toString(args));
+            try {
+
+                for (HandlerInvocationFilter filter : filters) {
+                    ResponseContext response = filter.filterRequest(requestContext, method, args);
+                    if (response != null) {
+                        return buildResponse(response);
+                    }
+                }
+
+                Object response = method.invoke(controller, args);
+                if (response instanceof ResponseContext) {
+                    ResponseContext responseContext = (ResponseContext) response;
+                    for (HandlerInvocationFilter filter : filters) {
+                        response = filter.filterResponse(requestContext, responseContext, method, args);
+                        if (response instanceof ResponseContext) {
+                            responseContext = (ResponseContext) response;
+                        }
+                    }
+                    return buildResponse(responseContext);
+                }
+                return Response.ok().entity(response).build();
+            } catch (ApiException e) {
+                throw e;
+            } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+                LOGGER.error("failed to invoke method " + method, e);
+                for (Throwable cause = e.getCause(); cause != null; ) {
+                    if (cause instanceof ApiException) {
+                        throw (ApiException) cause;
+                    }
+                    final Throwable next = cause.getCause();
+                    cause = next == cause || next == null ? null : next;
+                }
+                ApiError error = new ApiError()
+                        .message("failed to invoke controller")
+                        .code(500);
+                throw new ApiException(error, e);
+            }
         }
+
         Map<String, io.swagger.models.Response> responses = operation.getResponses();
         if (responses != null) {
-            String[] keys = new String[responses.keySet().size()];
-            Arrays.sort(responses.keySet().toArray(keys));
-            int code = 0;
-            String defaultKey = null;
-            for (String key : keys) {
-                if (key.startsWith("2")) {
-                    defaultKey = key;
-                    code = Integer.parseInt(key);
-                    break;
-                }
-                if ("default".equals(key)) {
-                    defaultKey = key;
-                    code = 200;
-                }
-            }
-
-            io.swagger.models.Response response = responses.get(defaultKey);
-            Object output = ExampleBuilder.fromProperty(response.getSchema(), definitions);
-            if (output != null) {
-                ResponseContext resp = new ResponseContext().entity(output);
-                setContentType(requestContext, resp, operation);
-                if(resp.getContentType() != null)
-                  return Response.status(code).entity(output).type(resp.getContentType()).build();
-                else
-                  return Response.status(code).entity(output).build();
-            }
-            return Response.status(code).build();
+            return buildDefaultMockResponse(requestContext, responses);
         }
         return Response.ok().build();
     }
-    
+
+    private Response buildDefaultMockResponse(RequestContext requestContext, Map<String, io.swagger.models.Response> responses) {
+        String[] keys = new String[responses.keySet().size()];
+        Arrays.sort(responses.keySet().toArray(keys));
+        int code = 0;
+        String defaultKey = null;
+        for (String key : keys) {
+            if (key.startsWith("2")) {
+                defaultKey = key;
+                code = Integer.parseInt(key);
+                break;
+            }
+            if ("default".equals(key)) {
+                defaultKey = key;
+                code = 200;
+            }
+        }
+
+        io.swagger.models.Response response = responses.get(defaultKey);
+        Object output = ExampleBuilder.fromProperty(response.getSchema(), definitions);
+        if (output != null) {
+            ResponseContext resp = new ResponseContext().entity(output);
+            setContentType(requestContext, resp, operation);
+            if (resp.getContentType() != null) {
+                return Response.status(code).entity(output).type(resp.getContentType()).build();
+            } else {
+                return Response.status(code).entity(output).build();
+            }
+        }
+        return Response.status(code).build();
+    }
+
+    private Response buildResponse(ResponseContext responseContext) {
+
+        ResponseBuilder builder = Response.status(responseContext.getStatus());
+
+        // response headers
+        for (String key : responseContext.getHeaders().keySet()) {
+            builder.header(key, responseContext.getHeaders().get(key));
+        }
+
+        // content type
+        if (responseContext.getContentType() != null) {
+            builder.type(responseContext.getContentType());
+        }
+
+        // entity
+        if (responseContext.getEntity() != null) {
+            builder.entity(responseContext.getEntity());
+        }
+        return builder.build();
+    }
+
     public void setContentType(RequestContext res, ResponseContext resp, Operation operation) {
         // honor what has been set, it may be determined by business logic in the controller
-        if(resp.getContentType() != null) {
-          return;
+        if (resp.getContentType() != null) {
+            return;
         }
         List<String> available = operation.getProduces();
-        if(available != null) {
-          for(String a : available) {
-            MediaType mt = MediaType.valueOf(a);
-            for(MediaType acceptable : res.getAcceptableMediaTypes()) {
-              if(mt.isCompatible(acceptable)) {
-                resp.setContentType(mt);
-                return;
-              }
+        if (available != null) {
+            for (String a : available) {
+                MediaType mt = MediaType.valueOf(a);
+                for (MediaType acceptable : res.getAcceptableMediaTypes()) {
+                    if (mt.isCompatible(acceptable)) {
+                        resp.setContentType(mt);
+                        return;
+                    }
+                }
             }
-          }
-          if(available.size() > 0) {
-            resp.setContentType(MediaType.valueOf(available.get(0)));
-          }
+            if (available.size() > 0) {
+                resp.setContentType(MediaType.valueOf(available.get(0)));
+            }
         }
     }
 

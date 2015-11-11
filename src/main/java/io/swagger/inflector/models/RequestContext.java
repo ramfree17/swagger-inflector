@@ -16,6 +16,8 @@
 
 package io.swagger.inflector.models;
 
+import io.swagger.models.Operation;
+
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -26,12 +28,16 @@ public class RequestContext {
     MultivaluedMap<String, String> headers;
     MediaType mediaType;
     List<MediaType> acceptableMediaTypes;
+    Operation operation;
 
-    public RequestContext() {}
+    public RequestContext() {
+    }
 
-    public RequestContext(ContainerRequestContext ctx) {
+    public RequestContext(ContainerRequestContext ctx, Operation operation) {
         this.context = ctx;
-        if(ctx != null) {
+        this.operation = operation;
+
+        if (ctx != null) {
             headers(ctx.getHeaders());
             mediaType(ctx.getMediaType());
             acceptableMediaTypes(ctx.getAcceptableMediaTypes());

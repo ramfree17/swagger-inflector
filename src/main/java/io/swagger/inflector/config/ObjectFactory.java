@@ -17,22 +17,18 @@
 package io.swagger.inflector.config;
 
 /**
- * Default ControllerFactory implementation that just calls newInstance
+ * Behaviour for instantiating filters - provide your custom implementation to the Configuration
+ * class for hooking into DI frameworks, script engines, etc
  */
 
-public class DefaultControllerFactory implements ControllerFactory {
+public interface ObjectFactory extends ControllerFactory {
 
     /**
-     * Instantiates the provided controller class calling cls.newInstance()
+     * Instantiates the provided filter class
      *
-     * @param cls the class to be instantiated
-     * @return an instance of the provided class
-     * @throws IllegalAccessException
-     * @throws InstantiationException
+     * @param filterClass the filter class to instantiate
+     * @return an instance of the class
      */
 
-    @Override
-    public Object instantiateController(Class<? extends Object> cls) throws IllegalAccessException, InstantiationException {
-        return cls.newInstance();
-    }
+    HandlerInvocationFilter instantiateFilter(String filterClass) throws IllegalAccessException, InstantiationException, ClassNotFoundException;
 }

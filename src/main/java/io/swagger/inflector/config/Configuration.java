@@ -18,6 +18,7 @@ package io.swagger.inflector.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.collect.Lists;
 import io.swagger.inflector.converters.InputConverter;
 import io.swagger.util.Yaml;
 import org.slf4j.Logger;
@@ -25,7 +26,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Configuration {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
@@ -44,7 +50,9 @@ public class Configuration {
     private List<String> inputConverters = new ArrayList<String>();
     private List<String> inputValidators = new ArrayList<String>();
     private List<String> entityProcessors = new ArrayList<String>();
-    private ControllerFactory controllerFactory = new DefaultControllerFactory();
+    private List<String> handlerInvocationFilters = Lists.newArrayList();
+    private ControllerFactory controllerFactory = null;
+    private ObjectFactory objectFactory = new DefaultObjectFactory();
     private String swaggerBase = "/";
 
     public String getSwaggerBase() {
@@ -71,40 +79,39 @@ public class Configuration {
     public static Configuration read() {
         String configLocation = System.getProperty("config", "inflector.yaml");
         System.out.println("loading config from " + configLocation);
-        if(configLocation != null) {
-          try {
-            return read(configLocation);
-          }
-          catch (Exception e) {
-            // continue
-            LOGGER.warn("couldn't read inflector config from system property");
-          }
+        if (configLocation != null) {
+            try {
+                return read(configLocation);
+            } catch (Exception e) {
+                // continue
+                LOGGER.warn("couldn't read inflector config from system property");
+            }
         }
         try {
             // try to load from resources
-            
+
             InputStream is = Configuration.class.getClassLoader().getResourceAsStream("/WEB-INF/inflector.yaml");
-            if(is != null) {
+            if (is != null) {
                 try {
-                  return Yaml.mapper().readValue(is, Configuration.class);
+                    return Yaml.mapper().readValue(is, Configuration.class);
                 } catch (Exception e) {
-                  LOGGER.warn("couldn't read inflector config from resource stream");
-                  // continue
+                    LOGGER.warn("couldn't read inflector config from resource stream");
+                    // continue
                 }
             }
         } catch (Exception e) {
-          LOGGER.warn("Returning default configuration!");
+            LOGGER.warn("Returning default configuration!");
         }
         return defaultConfiguration();
     }
 
     public static Configuration read(String configLocation) throws Exception {
         Configuration config = Yaml.mapper().readValue(new File(configLocation), Configuration.class);
-        if(config != null && config.getExceptionMappers().size() == 0) {
-          config.setExceptionMappers(Configuration.defaultConfiguration().getExceptionMappers());
+        if (config != null && config.getExceptionMappers().size() == 0) {
+            config.setExceptionMappers(Configuration.defaultConfiguration().getExceptionMappers());
         }
         String environment = System.getProperty("environment");
-        if(environment != null) {
+        if (environment != null) {
             System.out.println("Overriding environment to " + environment);
             config.setEnvironment(Environment.valueOf(environment));
         }
@@ -113,13 +120,13 @@ public class Configuration {
 
     public static Configuration defaultConfiguration() {
         return new Configuration()
-            .controllerPackage("io.swagger.sample.controllers")
-            .modelPackage("io.swagger.sample.models")
-            .swaggerUrl("swagger.yaml")
-            .exceptionMapper("io.swagger.inflector.utils.DefaultExceptionMapper")
-            .defaultValidators()
-            .defaultConverters()
-            .defaultProcessors();
+                .controllerPackage("io.swagger.sample.controllers")
+                .modelPackage("io.swagger.sample.models")
+                .swaggerUrl("swagger.yaml")
+                .exceptionMapper("io.swagger.inflector.utils.DefaultExceptionMapper")
+                .defaultValidators()
+                .defaultConverters()
+                .defaultProcessors();
     }
 
     public Configuration defaultValidators() {
@@ -135,8 +142,8 @@ public class Configuration {
     public Configuration defaultProcessors() {
         InputConverter.getInstance().defaultValidators();
         return this;
-  }
-    
+    }
+
     public Configuration modelPackage(String modelPackage) {
         this.modelPackage = modelPackage;
         return this;
@@ -157,8 +164,13 @@ public class Configuration {
         return this;
     }
 
-    public Configuration controllerFactory( ControllerFactory instantiator ){
-        this.controllerFactory = instantiator;
+    public Configuration controllerFactory(ControllerFactory controllerFactory) {
+        this.controllerFactory = controllerFactory;
+        return this;
+    }
+
+    public Configuration objectFactory(ObjectFactory objectFactory) {
+        this.objectFactory = objectFactory;
         return this;
     }
 
@@ -166,28 +178,38 @@ public class Configuration {
         this.swaggerUrl = swaggerUrl;
         return this;
     }
-    
+
     public Configuration exceptionMapper(String className) {
-      Class<?> cls;
-      try {
-          ClassLoader classLoader = Configuration.class.getClassLoader();
-          cls = classLoader.loadClass(className);
-          exceptionMappers.add(cls);
-      } catch (ClassNotFoundException e) {
-          LOGGER.error("unable to add exception mapper for `" + className + "`, " + e.getMessage());
-      }
-      return this;
+        Class<?> cls;
+        try {
+            ClassLoader classLoader = Configuration.class.getClassLoader();
+            cls = classLoader.loadClass(className);
+            exceptionMappers.add(cls);
+        } catch (ClassNotFoundException e) {
+            LOGGER.error("unable to add exception mapper for `" + className + "`, " + e.getMessage());
+        }
+        return this;
     }
 
     public Configuration() {
     }
 
+    @Deprecated
     public ControllerFactory getControllerFactory() {
         return controllerFactory;
     }
 
+    @Deprecated
     public void setControllerFactory(ControllerFactory controllerFactory) {
         this.controllerFactory = controllerFactory;
+    }
+
+    public ObjectFactory getObjectFactory() {
+        return objectFactory;
+    }
+
+    public void setObjectFactory(ObjectFactory objectFactory) {
+        this.objectFactory = objectFactory;
     }
 
     public void setControllerPackage(String controllerPackage) {
@@ -250,16 +272,18 @@ public class Configuration {
     public void addModelMapping(String name, Class<?> cls) {
         modelMap.put(name, cls);
     }
+
     public Class<?> getModelMapping(String name) {
         return modelMap.get(name);
     }
 
     public String getSwaggerUrl() {
-        if(System.getProperty("swaggerUrl") != null) {
+        if (System.getProperty("swaggerUrl") != null) {
             return System.getProperty("swaggerUrl");
         }
         return swaggerUrl;
     }
+
     public void setSwaggerUrl(String swaggerUrl) {
         this.swaggerUrl = swaggerUrl;
     }
@@ -267,6 +291,7 @@ public class Configuration {
     public void setInvalidRequestStatusCode(int code) {
         this.invalidRequestCode = code;
     }
+
     public int getInvalidRequestStatusCode() {
         return invalidRequestCode;
     }
@@ -274,6 +299,7 @@ public class Configuration {
     public void setRootPath(String rootPath) {
         this.rootPath = rootPath;
     }
+
     public String getRootPath() {
         return rootPath;
     }
@@ -281,6 +307,7 @@ public class Configuration {
     public Set<Class<?>> getExceptionMappers() {
         return exceptionMappers;
     }
+
     public void setExceptionMappers(Set<Class<?>> exceptionMappers) {
         this.exceptionMappers = exceptionMappers;
     }
@@ -288,6 +315,7 @@ public class Configuration {
     public List<String> getEntityProcessors() {
         return entityProcessors;
     }
+
     public void setEntityProcessors(List<String> entityProcessors) {
         this.entityProcessors = entityProcessors;
     }
@@ -295,6 +323,7 @@ public class Configuration {
     public List<String> getInputValidators() {
         return inputValidators;
     }
+
     public void setInputValidators(List<String> inputValidators) {
         this.inputValidators = inputValidators;
     }
@@ -302,13 +331,23 @@ public class Configuration {
     public List<String> getInputConverters() {
         return inputConverters;
     }
+
     public void setInputConverters(List<String> inputConverters) {
         this.inputConverters = inputConverters;
+    }
+
+    public List<String> getHandlerInvocationFilters() {
+        return handlerInvocationFilters;
+    }
+
+    public void setHandlerInvocationFilters(List<String> handlerInvocationFilters) {
+        this.handlerInvocationFilters = handlerInvocationFilters;
     }
 
     public Environment getEnvironment() {
         return environment;
     }
+
     public void setEnvironment(Environment environment) {
         this.environment = environment;
     }

@@ -17,22 +17,20 @@
 package io.swagger.inflector.config;
 
 /**
- * Default ControllerFactory implementation that just calls newInstance
+ * Default ObjectFactory implementation that just calls newInstance
  */
 
-public class DefaultControllerFactory implements ControllerFactory {
+public class DefaultObjectFactory extends DefaultControllerFactory implements ObjectFactory {
 
     /**
-     * Instantiates the provided controller class calling cls.newInstance()
+     * Instantiates the provided filter class calling cls.newInstance()
      *
-     * @param cls the class to be instantiated
-     * @return an instance of the provided class
-     * @throws IllegalAccessException
-     * @throws InstantiationException
+     * @param filterClass name of the class to be instantiated
+     * @return an instance of the specified class
      */
 
     @Override
-    public Object instantiateController(Class<? extends Object> cls) throws IllegalAccessException, InstantiationException {
-        return cls.newInstance();
+    public HandlerInvocationFilter instantiateFilter(String filterClass) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+        return (HandlerInvocationFilter) Class.forName(filterClass).newInstance();
     }
 }
