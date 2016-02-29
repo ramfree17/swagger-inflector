@@ -27,6 +27,7 @@ import io.swagger.inflector.models.ApiError;
 import io.swagger.inflector.models.RequestContext;
 import io.swagger.inflector.models.ResponseContext;
 import io.swagger.inflector.processors.EntityProcessorFactory;
+import io.swagger.inflector.schema.SchemaValidator;
 import io.swagger.inflector.utils.ApiException;
 import io.swagger.inflector.utils.ReflectionUtils;
 import io.swagger.inflector.validators.ValidationException;
@@ -376,50 +377,26 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
         if(method != null) {
           LOGGER.info("calling method " + method + " on controller " + this.controller + " with args " + Arrays.toString(args));
           try {
+              for (HandlerInvocationFilter filter : filters) {
+                  ResponseContext response = filter.filterRequest(requestContext, method, args);
+                  if (response != null) {
+                      return buildResponse(response);
+                  }
+              }
+
               Object response = method.invoke(controller, args);
               if (response instanceof ResponseContext) {
-                  ResponseContext wrapper = (ResponseContext) response;
-                  ResponseBuilder builder = Response.status(wrapper.getStatus());
-  
-                  // response headers
-                  for (String key : wrapper.getHeaders().keySet()) {
-                      List<String> v = wrapper.getHeaders().get(key);
-                      if(v.size() == 1) {
-                          builder.header(key, v.get(0));
-                      }
-                      else {
-                          builder.header(key, v);
+                  ResponseContext responseContext = (ResponseContext) response;
+                  for (HandlerInvocationFilter filter : filters) {
+                      response = filter.filterResponse(requestContext, responseContext, method, args);
+                      if (response instanceof ResponseContext) {
+                          responseContext = (ResponseContext) response;
                       }
                   }
-
-                  // content type
-                  if (wrapper.getContentType() != null) {
-                      builder.type(wrapper.getContentType());
-                  }
-
-                  // entity
-                  if (wrapper.getEntity() != null) {
-                      builder.entity(wrapper.getEntity());
-
-                      if (validatePayload && operation.getResponses() != null) {
-                          String responseCode = "" + wrapper.getStatus();
-                          io.swagger.models.Response responseSchema = operation.getResponses().get(responseCode);
-                          if(responseSchema == null) {
-                              // try default response schema
-                              responseSchema = operation.getResponses().get("default");
-                          }
-                          if(responseSchema != null && responseSchema.getSchema() != null) {
-                              validate(wrapper.getEntity(), responseSchema.getSchema(), SchemaValidator.Direction.OUTPUT);
-                          }
-                          else {
-                              LOGGER.debug("no response schema for code " + responseCode + " to validate against");
-                          }
-                      }
-                  }
-
-                  return builder.build();
+                  return buildResponse(responseContext);
               }
               return Response.ok().entity(response).build();
+
           } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
               for (Throwable cause = e.getCause(); cause != null;) {
                   if (cause instanceof ApiException) {
@@ -479,7 +456,13 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
 
         // response headers
         for (String key : responseContext.getHeaders().keySet()) {
-            builder.header(key, responseContext.getHeaders().get(key));
+            List<String> v = responseContext.getHeaders().get(key);
+            if(v.size() == 1) {
+                builder.header(key, v.get(0));
+            }
+            else {
+                builder.header(key, v);
+            }
         }
 
         // content type
@@ -490,7 +473,23 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
         // entity
         if (responseContext.getEntity() != null) {
             builder.entity(responseContext.getEntity());
+
+            if (validatePayload && operation.getResponses() != null) {
+                String responseCode = "" + responseContext.getStatus();
+                io.swagger.models.Response responseSchema = operation.getResponses().get(responseCode);
+                if(responseSchema == null) {
+                    // try default response schema
+                    responseSchema = operation.getResponses().get("default");
+                }
+                if(responseSchema != null && responseSchema.getSchema() != null) {
+                    validate(responseContext.getEntity(), responseSchema.getSchema(), SchemaValidator.Direction.OUTPUT);
+                }
+                else {
+                    LOGGER.debug("no response schema for code " + responseCode + " to validate against");
+                }
+            }
         }
+
         return builder.build();
     }
 
@@ -498,17 +497,21 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
         if(config.isValidatePayloads()) {
             boolean isValid = SchemaValidator.validate(o, Json.pretty(property), direction);
             if(!isValid) {
-                if(SchemaValidator.Direction.INPUT.equals(direction)) {
-                    throw new ApiException(new ApiError()
-                            .code(config.getInvalidRequestStatusCode())
-                            .message("Input does not match the expected structure"));
-                }
-                else {
-                    throw new ApiException(new ApiError()
-                            .code(config.getInvalidRequestStatusCode())
-                            .message("The server generated an invalid response"));
-                }
+                throwValidationException(direction);
             }
+        }
+    }
+
+    private void throwValidationException(SchemaValidator.Direction direction) {
+        if(SchemaValidator.Direction.INPUT.equals(direction)) {
+            throw new ApiException(new ApiError()
+                    .code(config.getInvalidRequestStatusCode())
+                    .message("Input does not match the expected structure"));
+        }
+        else {
+            throw new ApiException(new ApiError()
+                    .code(config.getInvalidRequestStatusCode())
+                    .message("The server generated an invalid response"));
         }
     }
 
@@ -516,16 +519,7 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
         if(config.isValidatePayloads()) {
             boolean isValid = SchemaValidator.validate(o, Json.pretty(model), direction);
             if(!isValid) {
-                if(SchemaValidator.Direction.INPUT.equals(direction)) {
-                    throw new ApiException(new ApiError()
-                            .code(config.getInvalidRequestStatusCode())
-                            .message("Input does not match the expected structure"));
-                }
-                else {
-                    throw new ApiException(new ApiError()
-                            .code(config.getInvalidRequestStatusCode())
-                            .message("The server generated an invalid response"));
-                }
+                throwValidationException(direction);
             }
         }
     }
