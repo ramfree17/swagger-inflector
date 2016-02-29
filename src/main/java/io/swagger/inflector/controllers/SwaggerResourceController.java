@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 SmartBear Software
+ *  Copyright 2016 SmartBear Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package io.swagger.inflector.controllers;
 
 import io.swagger.config.FilterFactory;
-import io.swagger.core.filter.SpecFilter;
 import io.swagger.core.filter.SwaggerSpecFilter;
+import io.swagger.inflector.utils.VendorSpecFilter;
 import io.swagger.models.Swagger;
 import org.glassfish.jersey.process.Inflector;
 
@@ -50,7 +50,7 @@ public class SwaggerResourceController implements Inflector<ContainerRequestCont
             }
 
             MultivaluedMap<String, String> headers = arg0.getHeaders();
-            return Response.ok().entity(new SpecFilter().filter(swagger, filter, null, cookies, headers)).build();
+            return Response.ok().entity(new VendorSpecFilter().filter(swagger, filter, null, cookies, headers)).build();
         }
         return Response.ok().entity(swagger).build();
     }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 SmartBear Software
+ *  Copyright 2016 SmartBear Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,9 +33,12 @@ import io.swagger.inflector.validators.ValidationException;
 import io.swagger.inflector.validators.ValidationMessage;
 import io.swagger.models.Model;
 import io.swagger.models.Operation;
+import io.swagger.models.parameters.BodyParameter;
 import io.swagger.models.parameters.FormParameter;
 import io.swagger.models.parameters.Parameter;
 import io.swagger.models.parameters.SerializableParameter;
+import io.swagger.models.properties.Property;
+import io.swagger.util.Json;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.process.Inflector;
 import org.slf4j.Logger;
@@ -47,6 +50,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -56,6 +60,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.net.URLDecoder;
 
 public class SwaggerOperationController extends ReflectionUtils implements Inflector<ContainerRequestContext, Response> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SwaggerOperationController.class);
@@ -70,6 +75,7 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
         commonHeaders.add("Content-Length");
     }
 
+    private boolean validatePayload = true;
     private String path;
     private String httpMethod;
     private Operation operation;
@@ -194,6 +200,8 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
         List<Parameter> parameters = operation.getParameters();
         RequestContext requestContext = new RequestContext(ctx, operation);
 
+        String path = ctx.getUriInfo().getPath();
+
         Object[] args = new Object[parameters.size() + 1];
         if (parameters != null) {
             int i = 0;
@@ -261,27 +269,32 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
                             if (formDataString != null) {
                                 for (String part : parts) {
                                     String[] kv = part.split("=");
-                                    if (kv != null) {
-                                        if (kv.length > 0) {
-                                            existingKeys.remove(kv[0] + ": fp");
-                                        }
-                                        if (kv.length == 2) {
-                                            // TODO how to handle arrays here?
-                                            String key = kv[0];
-                                            String value = kv[1];
-                                            if (parameter.getName().equals(key)) {
-                                                JavaType jt = parameterClasses[i];
-                                                Class<?> cls = jt.getRawClass();
-                                                try {
-                                                    o = validator.convertAndValidate(Arrays.asList(value), parameter, cls, definitions);
-                                                } catch (ConversionException e) {
-                                                    missingParams.add(e.getError());
-                                                } catch (ValidationException e) {
-                                                    missingParams.add(e.getValidationMessage());
-                                                }
-                                            }
-                                        }
-                                    }
+                                    if(kv != null) {
+                                      if(kv.length > 0) {
+                                        existingKeys.remove(kv[0] + ": fp");
+                                      }
+                                      if (kv.length == 2) {
+                                          // TODO how to handle arrays here?
+                                          String key = kv[0];
+                                          try {
+                                              String value = URLDecoder.decode(kv[1], "utf-8");
+                                              if (parameter.getName().equals(key)) {
+                                                  JavaType jt = parameterClasses[i];
+                                                  Class<?> cls = jt.getRawClass();
+                                                  try {
+                                                      o = validator.convertAndValidate(Arrays.asList(value), parameter, cls, definitions);
+                                                  } catch (ConversionException e) {
+                                                      missingParams.add(e.getError());
+                                                  } catch (ValidationException e) {
+                                                      missingParams.add(e.getValidationMessage());
+                                                  }
+                                              }
+                                          }
+                                          catch(UnsupportedEncodingException e) {
+                                              LOGGER.error("unable to decode value for " + key);
+                                          }
+                                      }
+                                   }
                                 }
                             }
                         }
@@ -298,11 +311,16 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
                             Class<?> cls = jt.getRawClass();
                             if ("body".equals(in)) {
                                 if (ctx.hasEntity()) {
+                                    BodyParameter body = (BodyParameter) parameter;
                                     o = EntityProcessorFactory.readValue(ctx.getMediaType(), ctx.getEntityStream(), cls);
-                                } else if (parameter.getRequired()) {
+                                    if(o != null && validatePayload) {
+                                        validate(o, body.getSchema(), SchemaValidator.Direction.INPUT);
+                                    }
+                                }
+                                else if(parameter.getRequired()) {
                                     ValidationException e = new ValidationException();
                                     e.message(new ValidationMessage()
-                                            .message("The input body `" + paramName + "` is required"));
+                                        .message("The input body `" + paramName + "` is required"));
                                     throw e;
                                 }
                             }
@@ -355,45 +373,66 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
                 throw new ApiException(error);
             }
         }
-        if (method != null) {
-            LOGGER.info("calling method " + method + " on controller " + this.controller + " with args " + Arrays.toString(args));
-            try {
+        if(method != null) {
+          LOGGER.info("calling method " + method + " on controller " + this.controller + " with args " + Arrays.toString(args));
+          try {
+              Object response = method.invoke(controller, args);
+              if (response instanceof ResponseContext) {
+                  ResponseContext wrapper = (ResponseContext) response;
+                  ResponseBuilder builder = Response.status(wrapper.getStatus());
+  
+                  // response headers
+                  for (String key : wrapper.getHeaders().keySet()) {
+                      List<String> v = wrapper.getHeaders().get(key);
+                      if(v.size() == 1) {
+                          builder.header(key, v.get(0));
+                      }
+                      else {
+                          builder.header(key, v);
+                      }
+                  }
 
-                for (HandlerInvocationFilter filter : filters) {
-                    ResponseContext response = filter.filterRequest(requestContext, method, args);
-                    if (response != null) {
-                        return buildResponse(response);
-                    }
-                }
+                  // content type
+                  if (wrapper.getContentType() != null) {
+                      builder.type(wrapper.getContentType());
+                  }
 
-                Object response = method.invoke(controller, args);
-                if (response instanceof ResponseContext) {
-                    ResponseContext responseContext = (ResponseContext) response;
-                    for (HandlerInvocationFilter filter : filters) {
-                        response = filter.filterResponse(requestContext, responseContext, method, args);
-                        if (response instanceof ResponseContext) {
-                            responseContext = (ResponseContext) response;
-                        }
-                    }
-                    return buildResponse(responseContext);
-                }
-                return Response.ok().entity(response).build();
-            } catch (ApiException e) {
-                throw e;
-            } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
-                LOGGER.error("failed to invoke method " + method, e);
-                for (Throwable cause = e.getCause(); cause != null; ) {
-                    if (cause instanceof ApiException) {
-                        throw (ApiException) cause;
-                    }
-                    final Throwable next = cause.getCause();
-                    cause = next == cause || next == null ? null : next;
-                }
-                ApiError error = new ApiError()
-                        .message("failed to invoke controller")
-                        .code(500);
-                throw new ApiException(error, e);
-            }
+                  // entity
+                  if (wrapper.getEntity() != null) {
+                      builder.entity(wrapper.getEntity());
+
+                      if (validatePayload && operation.getResponses() != null) {
+                          String responseCode = "" + wrapper.getStatus();
+                          io.swagger.models.Response responseSchema = operation.getResponses().get(responseCode);
+                          if(responseSchema == null) {
+                              // try default response schema
+                              responseSchema = operation.getResponses().get("default");
+                          }
+                          if(responseSchema != null && responseSchema.getSchema() != null) {
+                              validate(wrapper.getEntity(), responseSchema.getSchema(), SchemaValidator.Direction.OUTPUT);
+                          }
+                          else {
+                              LOGGER.debug("no response schema for code " + responseCode + " to validate against");
+                          }
+                      }
+                  }
+
+                  return builder.build();
+              }
+              return Response.ok().entity(response).build();
+          } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+              for (Throwable cause = e.getCause(); cause != null;) {
+                  if (cause instanceof ApiException) {
+                      throw (ApiException) cause;
+                  }
+                  final Throwable next = cause.getCause();
+                  cause = next == cause || next == null ? null : next;
+              }
+              ApiError error = new ApiError()
+                    .message("failed to invoke controller")
+                    .code(500);
+              throw new ApiException(error, e);
+          }
         }
 
         Map<String, io.swagger.models.Response> responses = operation.getResponses();
@@ -455,6 +494,42 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
         return builder.build();
     }
 
+    public void validate(Object o, Property property, SchemaValidator.Direction direction) throws ApiException {
+        if(config.isValidatePayloads()) {
+            boolean isValid = SchemaValidator.validate(o, Json.pretty(property), direction);
+            if(!isValid) {
+                if(SchemaValidator.Direction.INPUT.equals(direction)) {
+                    throw new ApiException(new ApiError()
+                            .code(config.getInvalidRequestStatusCode())
+                            .message("Input does not match the expected structure"));
+                }
+                else {
+                    throw new ApiException(new ApiError()
+                            .code(config.getInvalidRequestStatusCode())
+                            .message("The server generated an invalid response"));
+                }
+            }
+        }
+    }
+
+    public void validate(Object o, Model model, SchemaValidator.Direction direction) throws ApiException {
+        if(config.isValidatePayloads()) {
+            boolean isValid = SchemaValidator.validate(o, Json.pretty(model), direction);
+            if(!isValid) {
+                if(SchemaValidator.Direction.INPUT.equals(direction)) {
+                    throw new ApiException(new ApiError()
+                            .code(config.getInvalidRequestStatusCode())
+                            .message("Input does not match the expected structure"));
+                }
+                else {
+                    throw new ApiException(new ApiError()
+                            .code(config.getInvalidRequestStatusCode())
+                            .message("The server generated an invalid response"));
+                }
+            }
+        }
+    }
+
     public void setContentType(RequestContext res, ResponseContext resp, Operation operation) {
         // honor what has been set, it may be determined by business logic in the controller
         if (resp.getContentType() != null) {
@@ -508,4 +583,5 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
     public void setMethod(Method method) {
         this.method = method;
     }
+
 }

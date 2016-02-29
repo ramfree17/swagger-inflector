@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 SmartBear Software
+ *  Copyright 2016 SmartBear Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import io.swagger.inflector.processors.JsonProvider;
 import io.swagger.inflector.processors.XMLExampleProvider;
 import io.swagger.inflector.processors.YamlExampleProvider;
 import io.swagger.inflector.utils.DefaultSpecFilter;
+import io.swagger.inflector.utils.ResolverUtil;
 import io.swagger.inflector.validators.Validator;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
 import io.swagger.models.Model;
@@ -100,6 +101,11 @@ public class SwaggerInflector extends ResourceConfig {
         config = configuration;
         SwaggerDeserializationResult swaggerParseResult = new SwaggerParser().readWithInfo(config.getSwaggerUrl(), null, true);
         Swagger swagger = swaggerParseResult.getSwagger();
+
+        if(config.isValidatePayloads()) {
+            LOGGER.info("resolving swagger");
+            new ResolverUtil().resolveFully(swagger);
+        }
 
         if (swagger != null) {
             originalBasePath = swagger.getBasePath();

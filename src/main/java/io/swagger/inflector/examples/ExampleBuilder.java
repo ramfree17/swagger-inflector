@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 SmartBear Software
+ *  Copyright 2016 SmartBear Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -163,11 +163,24 @@ public class ExampleBuilder {
         } else if (property instanceof ObjectProperty) {
             if (example != null) {
                 try {
-                    output = Json.mapper().readValue(example.toString(), Example.class);
+                    output = Json.mapper().readValue(example.toString(), ObjectExample.class);
                 } catch (IOException e) {
                     LOGGER.error("unable to convert `" + example + "` to JsonNode");
                     output = new ObjectExample();
                 }
+            }
+            else {
+                ObjectExample outputExample = new ObjectExample();
+                outputExample.setName( property.getName() );
+                ObjectProperty op = (ObjectProperty) property;
+                if(op.getProperties() != null) {
+                    for(String propertyname : op.getProperties().keySet()) {
+                        Property inner = op.getProperties().get(propertyname);
+                        Example innerExample = fromProperty(inner, definitions);
+                        outputExample.put(propertyname, innerExample);
+                    }
+                }
+                output = outputExample;
             }
         } else if (property instanceof ArrayProperty) {
             ArrayProperty ap = (ArrayProperty) property;

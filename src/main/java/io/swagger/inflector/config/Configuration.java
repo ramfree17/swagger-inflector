@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 SmartBear Software
+ *  Copyright 2016 SmartBear Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ public class Configuration {
     private ControllerFactory controllerFactory = null;
     private ObjectFactory objectFactory = new DefaultObjectFactory();
     private String swaggerBase = "/";
+    private boolean validatePayloads = false;
 
     public String getSwaggerBase() {
         return swaggerBase;
@@ -362,5 +363,13 @@ public class Configuration {
 
     public void setSwaggerBase(String swaggerBase) {
         this.swaggerBase = swaggerBase;
+    }
+
+    public boolean isValidatePayloads() {
+        return validatePayloads;
+    }
+
+    public void setValidatePayloads(boolean validatePayloads) {
+        this.validatePayloads = validatePayloads;
     }
 }

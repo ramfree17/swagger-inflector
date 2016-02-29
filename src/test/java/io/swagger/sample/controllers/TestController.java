@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 SmartBear Software
+ *  Copyright 2016 SmartBear Software
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.swagger.inflector.models.RequestContext;
 import io.swagger.inflector.models.ResponseContext;
 import io.swagger.inflector.utils.ApiException;
 import io.swagger.test.models.Address;
+import io.swagger.sample.models.Dog;
 import io.swagger.test.models.User;
 
 import javax.ws.rs.core.MediaType;
@@ -36,7 +37,6 @@ public class TestController {
     }
 
     public ResponseContext formTest(RequestContext request, String user) {
-      System.out.println("found it! " + user);
         return new ResponseContext()
             .status(Status.OK)
             .contentType(MediaType.APPLICATION_JSON_TYPE)
@@ -59,10 +59,21 @@ public class TestController {
             .entity(new User());
     }
 
-    public ResponseContext withModel(RequestContext request, String id, Address animal) {
-        return new ResponseContext()
-            .status(Status.OK)
-            .entity("ok");
+    public ResponseContext withModel(RequestContext request, String id, Address address) {
+        if("-1".equals(id)) {
+            return new ResponseContext()
+                    .status(Status.OK)
+                    .entity("oops!  This isn't valid!");
+        }
+        else {
+            if(address == null) {
+                address = new Address();
+            }
+            address.setStreet(id + " street");
+            return new ResponseContext()
+                    .status(Status.OK)
+                    .entity(address);
+        }
     }
 
     public ResponseContext withModelArray(RequestContext request, String id, List<Address> modelArray) {
@@ -98,5 +109,14 @@ public class TestController {
 
     public ResponseContext stringBody(RequestContext request, String body) {
         return new ResponseContext().status(200).entity(body);
+    }
+
+    public ResponseContext returnWithResponseHeaders(RequestContext request) {
+        return new ResponseContext().status(500)
+                .header("foo", "bar");
+    }
+
+    public ResponseContext mappedWithDefinedModel(RequestContext request, Dog dog) {
+        return new ResponseContext().status(200);
     }
 }
