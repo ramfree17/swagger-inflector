@@ -24,12 +24,15 @@ import io.swagger.inflector.examples.models.AbstractExample;
 import io.swagger.inflector.examples.models.ArrayExample;
 import io.swagger.inflector.examples.models.DoubleExample;
 import io.swagger.inflector.examples.models.Example;
+import io.swagger.inflector.examples.models.IntegerExample;
 import io.swagger.inflector.examples.models.ObjectExample;
 import io.swagger.inflector.examples.models.StringExample;
 import io.swagger.inflector.processors.JsonExampleDeserializer;
 import io.swagger.inflector.processors.JsonNodeExampleSerializer;
 import io.swagger.models.Model;
 import io.swagger.models.ModelImpl;
+import io.swagger.models.Response;
+import io.swagger.models.Swagger;
 import io.swagger.models.Xml;
 import io.swagger.models.properties.AbstractProperty;
 import io.swagger.models.properties.ArrayProperty;
@@ -43,6 +46,7 @@ import io.swagger.models.properties.LongProperty;
 import io.swagger.models.properties.MapProperty;
 import io.swagger.models.properties.RefProperty;
 import io.swagger.models.properties.StringProperty;
+import io.swagger.parser.SwaggerParser;
 import io.swagger.test.models.User;
 import io.swagger.util.Json;
 import io.swagger.util.Yaml;
@@ -53,6 +57,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class ExampleBuilderTest {
     static {
@@ -520,5 +525,15 @@ public class ExampleBuilderTest {
 
     private void assertEqualsIgnoreLineEnding(String actual, String expected) {
         assertEquals(actual.replace("\n", System.getProperty("line.separator")), expected);
+    }
+
+    @Test
+    public void testObjectWithIntExampleProperty() throws Exception {
+        Swagger swagger = new SwaggerParser().read("src/test/swagger/swagger-with-int-property.yaml");
+
+        Response response = swagger.getPath("/user").getGet().getResponses().get( "200" );
+        ObjectExample example = (ObjectExample) ExampleBuilder.fromProperty(response.getSchema(), swagger.getDefinitions());
+
+        assertTrue( example.get("id") instanceof IntegerExample );
     }
 }
