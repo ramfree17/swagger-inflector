@@ -18,7 +18,7 @@ package io.swagger.inflector.config;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import io.swagger.util.Yaml;
+import v2.io.swagger.util.Yaml;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

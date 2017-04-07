@@ -16,12 +16,12 @@
 
 package io.swagger.inflector.utils;
 
-import io.swagger.core.filter.SpecFilter;
-import io.swagger.core.filter.SwaggerSpecFilter;
+import v2.io.swagger.core.filter.SpecFilter;
+import v2.io.swagger.core.filter.SwaggerSpecFilter;
 import io.swagger.inflector.Constants;
-import io.swagger.model.ApiDescription;
-import io.swagger.models.Model;
-import io.swagger.models.Operation;
+import v2.io.swagger.model.ApiDescription;
+import v2.io.swagger.models.Model;
+import v2.io.swagger.models.Operation;
 
 import java.util.List;
 import java.util.Map;

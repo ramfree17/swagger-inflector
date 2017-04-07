@@ -1,8 +1,8 @@
 package io.swagger.inflector.converters;
 
 import io.swagger.inflector.validators.*;
-import io.swagger.models.Model;
-import io.swagger.models.parameters.Parameter;
+import v2.io.swagger.models.Model;
+import v2.io.swagger.models.parameters.Parameter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

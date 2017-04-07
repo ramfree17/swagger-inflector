@@ -16,7 +16,7 @@
 
 package io.swagger.inflector.config;
 
-import io.swagger.models.Operation;
+import v2.io.swagger.models.Operation;
 
 /**
  * Default ControllerFactory implementation that just calls newInstance

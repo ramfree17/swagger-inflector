@@ -18,9 +18,9 @@ package io.swagger.test.validators;
 
 import io.swagger.inflector.converters.InputConverter;
 import io.swagger.inflector.validators.ValidationException;
-import io.swagger.models.parameters.QueryParameter;
-import io.swagger.models.properties.DoubleProperty;
-import io.swagger.models.properties.LongProperty;
+import v2.io.swagger.models.parameters.QueryParameter;
+import v2.io.swagger.models.properties.DoubleProperty;
+import v2.io.swagger.models.properties.LongProperty;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 

@@ -19,6 +19,7 @@ package io.swagger.inflector.utils;
 import io.swagger.inflector.models.ApiError;
 import io.swagger.inflector.processors.EntityProcessor;
 import io.swagger.inflector.processors.EntityProcessorFactory;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

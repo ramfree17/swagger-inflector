@@ -21,14 +21,13 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
-import io.swagger.config.FilterFactory;
-import io.swagger.core.filter.SwaggerSpecFilter;
 import io.swagger.inflector.config.Configuration;
 import io.swagger.inflector.controllers.InflectResultController;
 import io.swagger.inflector.controllers.SwaggerOperationController;
 import io.swagger.inflector.controllers.SwaggerResourceController;
 import io.swagger.inflector.converters.Converter;
 import io.swagger.inflector.converters.InputConverter;
+import io.swagger.inflector.jackson.SwaggerSerializers;
 import io.swagger.inflector.models.InflectResult;
 import io.swagger.inflector.processors.EntityProcessor;
 import io.swagger.inflector.processors.EntityProcessorFactory;
@@ -42,21 +41,22 @@ import io.swagger.inflector.utils.DefaultContentTypeProvider;
 import io.swagger.inflector.utils.DefaultSpecFilter;
 import io.swagger.inflector.utils.ResolverUtil;
 import io.swagger.inflector.validators.Validator;
-import io.swagger.jaxrs.listing.SwaggerSerializers;
-import io.swagger.models.Model;
-import io.swagger.models.Operation;
-import io.swagger.models.Path;
-import io.swagger.models.Swagger;
-import io.swagger.parser.SwaggerParser;
-import io.swagger.parser.util.SwaggerDeserializationResult;
-import io.swagger.util.Json;
-import io.swagger.util.Yaml;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import v2.io.swagger.config.FilterFactory;
+import v2.io.swagger.core.filter.SwaggerSpecFilter;
+import v2.io.swagger.models.Model;
+import v2.io.swagger.models.Operation;
+import v2.io.swagger.models.Path;
+import v2.io.swagger.models.Swagger;
+import v2.io.swagger.parser.SwaggerParser;
+import v2.io.swagger.parser.util.SwaggerDeserializationResult;
+import v2.io.swagger.util.Json;
+import v2.io.swagger.util.Yaml;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.HttpMethod;
@@ -69,6 +69,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+
+//import io.swagger.config.FilterFactory;
+//import io.swagger.core.filter.SwaggerSpecFilter;
+//import io.swagger.jaxrs.listing.SwaggerSerializers;
 
 public class SwaggerInflector extends ResourceConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(SwaggerInflector.class);
@@ -242,6 +246,7 @@ public class SwaggerInflector extends ResourceConfig {
         // Swagger serializers
         register(SwaggerSerializers.class);
         SwaggerSerializers.setPrettyPrint(config.isPrettyPrint());
+
 
         for (Class<?> exceptionMapper : config.getExceptionMappers()) {
             register(exceptionMapper);

@@ -2,8 +2,8 @@ package io.swagger.sample.converters;
 
 import io.swagger.inflector.converters.ConversionException;
 import io.swagger.inflector.converters.Converter;
-import io.swagger.models.Model;
-import io.swagger.models.parameters.Parameter;
+import v2.io.swagger.models.Model;
+import v2.io.swagger.models.parameters.Parameter;
 
 import java.util.Iterator;
 import java.util.List;

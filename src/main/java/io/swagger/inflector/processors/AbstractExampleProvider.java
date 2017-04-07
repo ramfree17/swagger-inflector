@@ -16,21 +16,18 @@
 
 package io.swagger.inflector.processors;
 
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.swagger.inflector.examples.models.Example;
-import io.swagger.util.Json;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import v2.io.swagger.util.Json;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 
 @Provider
 @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, "application/yaml"})

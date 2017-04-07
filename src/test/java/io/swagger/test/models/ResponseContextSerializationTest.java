@@ -1,7 +1,7 @@
 package io.swagger.test.models;
 
 import io.swagger.inflector.models.ResponseContext;
-import io.swagger.util.Json;
+import v2.io.swagger.util.Json;
 import org.testng.annotations.Test;
 
 public class ResponseContextSerializationTest {

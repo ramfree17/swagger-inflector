@@ -38,14 +38,15 @@ import io.swagger.inflector.utils.ContentTypeSelector;
 import io.swagger.inflector.utils.ReflectionUtils;
 import io.swagger.inflector.validators.ValidationException;
 import io.swagger.inflector.validators.ValidationMessage;
-import io.swagger.models.Model;
-import io.swagger.models.Operation;
-import io.swagger.models.parameters.BodyParameter;
-import io.swagger.models.parameters.FormParameter;
-import io.swagger.models.parameters.Parameter;
-import io.swagger.models.parameters.SerializableParameter;
-import io.swagger.models.properties.Property;
-import io.swagger.util.Json;
+
+import v2.io.swagger.models.Model;
+import v2.io.swagger.models.Operation;
+import v2.io.swagger.models.parameters.BodyParameter;
+import v2.io.swagger.models.parameters.FormParameter;
+import v2.io.swagger.models.parameters.Parameter;
+import v2.io.swagger.models.parameters.SerializableParameter;
+import v2.io.swagger.models.properties.Property;
+import v2.io.swagger.util.Json;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.fileupload.MultipartStream;
@@ -520,7 +521,7 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
 
                             if (operation.getResponses() != null) {
                                 String responseCode = String.valueOf(wrapper.getStatus());
-                                io.swagger.models.Response responseSchema = operation.getResponses().get(responseCode);
+                                v2.io.swagger.models.Response responseSchema = operation.getResponses().get(responseCode);
                                 if (responseSchema == null) {
                                     // try default response schema
                                     responseSchema = operation.getResponses().get("default");
@@ -547,7 +548,7 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
                     throw new ApiException(ApiErrorUtils.createInternalError(), e);
                 }
             }
-            Map<String, io.swagger.models.Response> responses = operation.getResponses();
+            Map<String, v2.io.swagger.models.Response> responses = operation.getResponses();
             if (responses != null) {
                 String[] keys = new String[responses.keySet().size()];
                 Arrays.sort(responses.keySet().toArray(keys));
@@ -573,7 +574,7 @@ public class SwaggerOperationController extends ReflectionUtils implements Infle
 
                 if(defaultKey != null) {
                     ResponseBuilder builder = Response.status(code);
-                    io.swagger.models.Response response = responses.get(defaultKey);
+                    v2.io.swagger.models.Response response = responses.get(defaultKey);
 
                     if(response.getHeaders() != null && response.getHeaders().size() > 0) {
                         for(String key: response.getHeaders().keySet()) {

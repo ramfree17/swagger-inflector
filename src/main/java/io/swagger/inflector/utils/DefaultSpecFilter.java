@@ -1,12 +1,13 @@
 package io.swagger.inflector.utils;
 
-import io.swagger.core.filter.AbstractSpecFilter;
 import io.swagger.inflector.Constants;
-import io.swagger.model.ApiDescription;
-import io.swagger.models.Model;
-import io.swagger.models.Operation;
-import io.swagger.models.parameters.Parameter;
-import io.swagger.models.properties.Property;
+
+import v2.io.swagger.core.filter.AbstractSpecFilter;
+import v2.io.swagger.model.ApiDescription;
+import v2.io.swagger.models.Model;
+import v2.io.swagger.models.Operation;
+import v2.io.swagger.models.parameters.Parameter;
+import v2.io.swagger.models.properties.Property;
 
 import java.util.List;
 import java.util.Map;

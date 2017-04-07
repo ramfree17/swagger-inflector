@@ -17,18 +17,17 @@
 package io.swagger.inflector.processors;
 
 import io.swagger.inflector.examples.models.Example;
-import io.swagger.util.Yaml;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
+import v2.io.swagger.util.Yaml;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 
 @Provider
 @Produces({"application/yaml"})

@@ -16,7 +16,7 @@
 
 package io.swagger.inflector.config;
 
-import io.swagger.models.Swagger;
+import v2.io.swagger.models.Swagger;
 
 public interface SwaggerProcessor {
 

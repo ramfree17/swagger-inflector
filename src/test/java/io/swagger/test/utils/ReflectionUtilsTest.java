@@ -20,11 +20,9 @@ import com.google.common.collect.Lists;
 import io.swagger.inflector.Constants;
 import io.swagger.inflector.config.Configuration;
 import io.swagger.inflector.utils.ReflectionUtils;
-import io.swagger.models.Operation;
-
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import v2.io.swagger.models.Operation;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

@@ -20,11 +20,11 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.swagger.inflector.config.Configuration;
 import io.swagger.inflector.controllers.SwaggerOperationController;
 import io.swagger.inflector.processors.JsonNodeExampleSerializer;
-import io.swagger.models.Operation;
-import io.swagger.models.Swagger;
-import io.swagger.parser.SwaggerParser;
-import io.swagger.util.Json;
-import io.swagger.util.Yaml;
+import v2.io.swagger.models.Operation;
+import v2.io.swagger.models.Swagger;
+import v2.io.swagger.parser.SwaggerParser;
+import v2.io.swagger.util.Json;
+import v2.io.swagger.util.Yaml;
 import org.testng.annotations.Test;
 
 import javax.ws.rs.container.ContainerRequestContext;

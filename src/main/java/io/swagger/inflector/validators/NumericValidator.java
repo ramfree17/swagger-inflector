@@ -1,7 +1,7 @@
 package io.swagger.inflector.validators;
 
-import io.swagger.models.parameters.AbstractSerializableParameter;
-import io.swagger.models.parameters.Parameter;
+import v2.io.swagger.models.parameters.AbstractSerializableParameter;
+import v2.io.swagger.models.parameters.Parameter;
 
 import java.util.Iterator;
 import java.util.LinkedHashSet;

@@ -17,18 +17,18 @@
 package io.swagger.test;
 
 import io.swagger.inflector.converters.DefaultConverter;
-import io.swagger.models.Operation;
-import io.swagger.models.parameters.QueryParameter;
-import io.swagger.models.properties.ArrayProperty;
-import io.swagger.models.properties.BooleanProperty;
-import io.swagger.models.properties.DateProperty;
-import io.swagger.models.properties.DateTimeProperty;
-import io.swagger.models.properties.DoubleProperty;
-import io.swagger.models.properties.FloatProperty;
-import io.swagger.models.properties.IntegerProperty;
-import io.swagger.models.properties.LongProperty;
-import io.swagger.models.properties.StringProperty;
-import io.swagger.models.properties.BaseIntegerProperty;
+import v2.io.swagger.models.Operation;
+import v2.io.swagger.models.parameters.QueryParameter;
+import v2.io.swagger.models.properties.ArrayProperty;
+import v2.io.swagger.models.properties.BooleanProperty;
+import v2.io.swagger.models.properties.DateProperty;
+import v2.io.swagger.models.properties.DateTimeProperty;
+import v2.io.swagger.models.properties.DoubleProperty;
+import v2.io.swagger.models.properties.FloatProperty;
+import v2.io.swagger.models.properties.IntegerProperty;
+import v2.io.swagger.models.properties.LongProperty;
+import v2.io.swagger.models.properties.StringProperty;
+import v2.io.swagger.models.properties.BaseIntegerProperty;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;

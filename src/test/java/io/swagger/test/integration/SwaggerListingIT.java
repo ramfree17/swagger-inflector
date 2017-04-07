@@ -18,13 +18,13 @@ package io.swagger.test.integration;
 
 import io.swagger.inflector.Constants;
 import io.swagger.inflector.config.SwaggerProcessor;
-import io.swagger.models.Model;
-import io.swagger.models.Operation;
-import io.swagger.models.Path;
-import io.swagger.models.Swagger;
+import v2.io.swagger.models.Model;
+import v2.io.swagger.models.Operation;
+import v2.io.swagger.models.Path;
+import v2.io.swagger.models.Swagger;
 import io.swagger.test.client.ApiClient;
-import io.swagger.util.Json;
-import io.swagger.util.Yaml;
+import v2.io.swagger.util.Json;
+import v2.io.swagger.util.Yaml;
 import junit.framework.Assert;
 import org.testng.annotations.Test;
 

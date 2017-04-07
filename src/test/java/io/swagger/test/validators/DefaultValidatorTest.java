@@ -19,8 +19,8 @@ package io.swagger.test.validators;
 import io.swagger.inflector.converters.ConversionException;
 import io.swagger.inflector.converters.InputConverter;
 import io.swagger.inflector.validators.*;
-import io.swagger.models.parameters.*;
-import io.swagger.models.properties.*;
+import v2.io.swagger.models.parameters.*;
+import v2.io.swagger.models.properties.*;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;

@@ -16,7 +16,7 @@
 
 package io.swagger.inflector.config;
 
-import io.swagger.models.Operation;
+import v2.io.swagger.models.Operation;
 
 /**
  * Behaviour for instantiating controllers - provide your custom implementation to the Configuration

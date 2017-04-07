@@ -16,26 +16,26 @@
 
 package io.swagger.inflector.controllers;
 
-import io.swagger.config.FilterFactory;
-import io.swagger.core.filter.SwaggerSpecFilter;
 import io.swagger.inflector.config.SwaggerProcessor;
 import io.swagger.inflector.utils.VendorSpecFilter;
-import io.swagger.models.Swagger;
-import io.swagger.util.Json;
 import org.glassfish.jersey.process.Inflector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import v2.io.swagger.config.FilterFactory;
+import v2.io.swagger.core.filter.SwaggerSpecFilter;
+import v2.io.swagger.models.Swagger;
+import v2.io.swagger.util.Json;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SwaggerResourceController implements Inflector<ContainerRequestContext, Response> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SwaggerResourceController.class);

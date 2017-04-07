@@ -21,7 +21,7 @@ import io.swagger.inflector.CustomMediaTypes;
 import io.swagger.inflector.models.ApiError;
 import io.swagger.test.client.ApiClient;
 import io.swagger.test.client.ApiException;
-import io.swagger.util.Json;
+import v2.io.swagger.util.Json;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

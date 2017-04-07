@@ -18,18 +18,17 @@ package io.swagger.test.validators;
 
 import io.swagger.inflector.converters.InputConverter;
 import io.swagger.inflector.validators.ValidationException;
-import io.swagger.models.parameters.QueryParameter;
-import io.swagger.models.properties.DateProperty;
-import io.swagger.models.properties.DateTimeProperty;
-import io.swagger.models.properties.StringProperty;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import v2.io.swagger.models.parameters.QueryParameter;
+import v2.io.swagger.models.properties.DateProperty;
+import v2.io.swagger.models.properties.DateTimeProperty;
+import v2.io.swagger.models.properties.StringProperty;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class StringTypeValidatorTest {
     InputConverter converter;

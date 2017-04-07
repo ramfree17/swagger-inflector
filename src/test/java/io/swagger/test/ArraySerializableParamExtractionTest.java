@@ -17,13 +17,13 @@
 package io.swagger.test;
 
 import io.swagger.inflector.converters.DefaultConverter;
-import io.swagger.models.parameters.Parameter;
-import io.swagger.models.parameters.QueryParameter;
-import io.swagger.models.properties.ArrayProperty;
-import io.swagger.models.properties.BooleanProperty;
-import io.swagger.models.properties.IntegerProperty;
-import io.swagger.models.properties.StringProperty;
-import io.swagger.util.Json;
+import v2.io.swagger.models.parameters.Parameter;
+import v2.io.swagger.models.parameters.QueryParameter;
+import v2.io.swagger.models.properties.ArrayProperty;
+import v2.io.swagger.models.properties.BooleanProperty;
+import v2.io.swagger.models.properties.IntegerProperty;
+import v2.io.swagger.models.properties.StringProperty;
+import v2.io.swagger.util.Json;
 
 import org.testng.annotations.Test;
 

@@ -1,13 +1,14 @@
 package io.swagger.inflector.utils;
 
 import io.swagger.inflector.Constants;
-import io.swagger.models.*;
-import io.swagger.models.parameters.BodyParameter;
-import io.swagger.models.parameters.Parameter;
-import io.swagger.models.properties.ArrayProperty;
-import io.swagger.models.properties.ObjectProperty;
-import io.swagger.models.properties.Property;
-import io.swagger.models.properties.RefProperty;
+import v2.io.swagger.models.*;
+import v2.io.swagger.models.parameters.BodyParameter;
+import v2.io.swagger.models.parameters.Parameter;
+import v2.io.swagger.models.properties.ArrayProperty;
+import v2.io.swagger.models.properties.ObjectProperty;
+import v2.io.swagger.models.properties.Property;
+import v2.io.swagger.models.properties.RefProperty;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -16,17 +16,17 @@
 
 package io.swagger.test;
 
-import io.swagger.converter.ModelConverters;
+import v2.io.swagger.converter.ModelConverters;
 import io.swagger.inflector.examples.ExampleBuilder;
 import io.swagger.inflector.examples.models.IntegerExample;
 import io.swagger.inflector.examples.models.ObjectExample;
 import io.swagger.inflector.examples.models.StringExample;
-import io.swagger.models.Model;
-import io.swagger.models.properties.IntegerProperty;
-import io.swagger.models.properties.RefProperty;
-import io.swagger.models.properties.StringProperty;
+import v2.io.swagger.models.Model;
+import v2.io.swagger.models.properties.IntegerProperty;
+import v2.io.swagger.models.properties.RefProperty;
+import v2.io.swagger.models.properties.StringProperty;
 import io.swagger.test.models.User;
-import io.swagger.util.Json;
+import v2.io.swagger.util.Json;
 import org.testng.annotations.Test;
 
 import java.util.Map;

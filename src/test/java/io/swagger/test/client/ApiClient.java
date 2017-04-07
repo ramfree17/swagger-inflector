@@ -21,7 +21,7 @@ import io.swagger.test.client.auth.ApiKeyAuth;
 import io.swagger.test.client.auth.Authentication;
 import io.swagger.test.client.auth.HttpBasicAuth;
 import io.swagger.test.client.auth.OAuth;
-import io.swagger.util.Json;
+import v2.io.swagger.util.Json;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.filter.LoggingFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;

@@ -1,6 +1,6 @@
 package io.swagger.inflector.validators;
 
-import io.swagger.models.parameters.Parameter;
+import v2.io.swagger.models.parameters.Parameter;
 
 import java.util.Iterator;
 

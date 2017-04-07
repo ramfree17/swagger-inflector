@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import io.swagger.inflector.schema.SchemaValidator;
-import io.swagger.util.Json;
+import v2.io.swagger.util.Json;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertFalse;

@@ -16,7 +16,7 @@
 package io.swagger.inflector.config;
 
 import io.swagger.inflector.SwaggerInflector;
-import io.swagger.models.Operation;
+import v2.io.swagger.models.Operation;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
